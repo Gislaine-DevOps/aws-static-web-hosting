@@ -23,9 +23,9 @@ Resources:
             Principal: '*'
             Action: s3:GetObject
             Resource: !Sub 'arn:aws:s3:::gisbucket1/*'
-Outputs:
-  WebsiteURL:
-    Value: !GetAtt 
-      - S3Bucket
-      - WebsiteURL
-    Description: This URL is used for my static website
+# Outputs:
+#   WebsiteURL:
+#     Value: !GetAtt 
+#       - S3Bucket
+#       - WebsiteURL
+#     Description: This URL is used for my static website
