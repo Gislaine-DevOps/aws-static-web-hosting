@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template to create an AWS CodePipeline to deploy
+  index.html to an S3 bucket.
+
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: Name of the S3 bucket to deploy the index.html file.
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository (owner/repo) to pull the source from.
+  GitHubBranch:
+    Type: String
+    Default: main
+    Description: Branch of the GitHub repository to pull the source from.
+  GitHubToken:
+    Type: String
+    NoEcho: true
+    Description: GitHub OAuth token for accessing the repository.
+
+Resources:
+  PipelineArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-artifacts
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodePipelinePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource: '*'
+
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: '1'
+              Configuration:
+                Owner: !Select
+                  - 0
+                  - !Split
+                    - /
+                    - !Ref GitHubRepo
+                Repo: !Select
+                  - 1
+                  - !Split
+                    - /
+                    - !Ref GitHubRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: DeployAction
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: S3
+                Version: '1'
+              Configuration:
+                BucketName: !Ref S3BucketName
+                Extract: false
+              InputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 1
+
+Outputs:
+  PipelineName:
+    Value: !Ref CodePipeline
+    Description: Name of the created CodePipeline
+
+  ArtifactBucketName:
+    Value: !Ref PipelineArtifactBucket
+    Description: Name of the S3 bucket for pipeline artifacts
