@@ -24,7 +24,7 @@ Resources:
   PipelineArtifactBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${AWS::StackName}-artifacts
+      BucketName: !Sub ${AWS::StackName}-artifacts-franklin
 
   CodePipelineRole:
     Type: AWS::IAM::Role
@@ -96,6 +96,7 @@ Resources:
               Configuration:
                 BucketName: !Ref S3BucketName
                 Extract: false
+                ObjectKey: index.html
               InputArtifacts:
                 - Name: SourceOutput
               RunOrder: 1
