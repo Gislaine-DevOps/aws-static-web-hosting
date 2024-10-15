@@ -5,6 +5,7 @@ Description: CloudFormation template to create an AWS CodePipeline to deploy
 Parameters:
   S3BucketName:
     Type: String
+    Default: 
     Description: Name of the S3 bucket to deploy the index.html file.
   GitHubRepo:
     Type: String
@@ -15,6 +16,7 @@ Parameters:
     Description: Branch of the GitHub repository to pull the source from.
   GitHubToken:
     Type: String
+    Default: 
     NoEcho: true
     Description: GitHub OAuth token for accessing the repository.
 
